@@ -3,43 +3,58 @@
 import argparse
 import ffmpeg
 import numpy as np
+import cv2
 
 parser = argparse.ArgumentParser(description='Find the sync between two videos')
 parser.add_argument('video1', help="the first footage")
 parser.add_argument("video2", help="the second footage")
 args = parser.parse_args()
 
-video1_probe = ffmpeg.probe(args.video1)
-video1_stream = next((stream for stream in video1_probe['streams'] if stream['codec_type'] == 'video'), None)
-video1_width = int(video1_stream['width'])
-video1_height = int(video1_stream['height'])
-out1, _ = (
-    ffmpeg
-    .input(args.video1)
-    .output('pipe:', format='rawvideo', pix_fmt='rgb24')
-    .run(capture_stdout=True)
-)
-video1_arr = (
-    np
-    .frombuffer(out1, np.uint8)
-    .reshape([-1, video1_height, video1_width, 3])
-)
+# video1_probe = ffmpeg.probe(args.video1)
+# video1_stream = next((stream for stream in video1_probe['streams'] if stream['codec_type'] == 'video'), None)
+# video1_width = int(video1_stream['width'])
+# video1_height = int(video1_stream['height'])
+# out1, _ = (
+#     ffmpeg
+#     .input(args.video1)
+#     .output('pipe:', format='rawvideo', pix_fmt='rgb24')
+#     .run(capture_stdout=True)
+# )
+# video1_arr = (
+#     np
+#     .frombuffer(out1, np.uint8)
+#     .reshape([-1, video1_height, video1_width, 3])
+# )
 
-video2_probe = ffmpeg.probe(args.video2)
-video2_stream = next((stream for stream in video2_probe['streams'] if stream['codec_type'] == 'video'), None)
-video2_width = int(video2_stream['width'])
-video2_height = int(video2_stream['height'])
-out2, _ = (
-    ffmpeg
-    .input(args.video2)
-    .output('pipe:', format='rawvideo', pix_fmt='rgb24')
-    .run(capture_stdout=True)
-)
-video2_arr = (
-    np
-    .frombuffer(out2, np.uint8)
-    .reshape([-1, video2_height, video2_width, 3])
-)
+# video2_probe = ffmpeg.probe(args.video2)
+# video2_stream = next((stream for stream in video2_probe['streams'] if stream['codec_type'] == 'video'), None)
+# video2_width = int(video2_stream['width'])
+# video2_height = int(video2_stream['height'])
+# out2, _ = (
+#     ffmpeg
+#     .input(args.video2)
+#     .output('pipe:', format='rawvideo', pix_fmt='rgb24')
+#     .run(capture_stdout=True)
+# )
+# video2_arr = (
+#     np
+#     .frombuffer(out2, np.uint8)
+#     .reshape([-1, video2_height, video2_width, 3])
+# )
 
-print(video1_arr.shape)
-print(video2_arr.shape)
+blue_lower=np.array([100,150,0],np.uint8)
+blue_upper=np.array([140,255,255],np.uint8)
+lower_blue = np.array([110,50,50])
+upper_blue = np.array([130,255,255])
+
+cap = cv2.VideoCapture(args.video1)
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+    hsv_img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv_img, lower_blue, upper_blue)
+    cv2.imshow('video1', hsv_img)
+    cv2.imshow('mask', mask)
+    if cv2.waitKey(1) == ord('q'):
+        break
